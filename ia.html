@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planificador Familiar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center mb-6">📅 Planificador Familiar</h1>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <!-- Persona Section -->
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">👩 Mar</h2>
+                <div>
+                    <ul id="tasks-mar" class="list-disc pl-6 mb-4"></ul>
+                    <input id="task-input-mar" type="text" placeholder="Agregar tarea..." class="border rounded px-2 py-1 w-full mb-2">
+                    <button onclick="addTask('mar')" class="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">Agregar</button>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">👨 Pablo</h2>
+                <div>
+                    <ul id="tasks-pablo" class="list-disc pl-6 mb-4"></ul>
+                    <input id="task-input-pablo" type="text" placeholder="Agregar tarea..." class="border rounded px-2 py-1 w-full mb-2">
+                    <button onclick="addTask('pablo')" class="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600">Agregar</button>
+                </div>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-md">
+                <h2 class="text-xl font-bold mb-2">👦 Balti</h2>
+                <div>
+                    <ul id="tasks-balti" class="list-disc pl-6 mb-4"></ul>
+                    <input id="task-input-balti" type="text" placeholder="Agregar tarea..." class="border rounded px-2 py-1 w-full mb-2">
+                    <button onclick="addTask('balti')" class="bg-yellow-500 text-white px-3 py-1 rounded hover:bg-yellow-600">Agregar</button>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6 text-center">
+            <button onclick="exportData()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">📤 Exportar Tareas</button>
+            <label class="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 cursor-pointer">
+                📥 Importar Tareas
+                <input type="file" id="import-file" class="hidden" onchange="importData(event)">
+            </label>
+            <button onclick="clearAll()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">🗑️ Limpiar Todo</button>
+        </div>
+    </div>
+
+    <script>
+        const taskLists = {
+            mar: [],
+            pablo: [],
+            balti: []
+        };
+
+        function loadFromStorage() {
+            const data = localStorage.getItem('taskLists');
+            if (data) {
+                Object.assign(taskLists, JSON.parse(data));
+                renderTasks();
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('taskLists', JSON.stringify(taskLists));
+        }
+
+        function renderTasks() {
+            ['mar', 'pablo', 'balti'].forEach(person => {
+                const listElement = document.getElementById(`tasks-${person}`);
+                listElement.innerHTML = taskLists[person].map((task, index) => `
+                    <li class="flex justify-between items-center">
+                        <span>${task}</span>
+                        <button onclick="removeTask('${person}', ${index})" class="text-red-500 hover:text-red-700">✖️</button>
+                    </li>
+                `).join('');
+            });
+        }
+
+        function addTask(person) {
+            const input = document.getElementById(`task-input-${person}`);
+            const task = input.value.trim();
+            if (task) {
+                taskLists[person].push(task);
+                input.value = '';
+                saveToStorage();
+                renderTasks();
+            }
+        }
+
+        function removeTask(person, index) {
+            taskLists[person].splice(index, 1);
+            saveToStorage();
+            renderTasks();
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify(taskLists)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'tareas-familia.json';
+            link.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const data = JSON.parse(e.target.result);
+                    Object.assign(taskLists, data);
+                    saveToStorage();
+                    renderTasks();
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function clearAll() {
+            if (confirm("¿Estás seguro de que deseas borrar todas las tareas?")) {
+                Object.keys(taskLists).forEach(key => taskLists[key] = []);
+                saveToStorage();
+                renderTasks();
+            }
+        }
+
+        loadFromStorage();
+    </script>
+</body>
+</html>
+
